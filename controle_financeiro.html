@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle Financeiro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  #status-bar {
+    text-align: center;
+    font-size: 0.72rem;
+    color: #aaa;
+    margin-bottom: 22px;
+    height: 16px;
+  }
+
+  #status-bar.saving { color: #e67e22; }
+  #status-bar.saved  { color: #43a047; }
+  #status-bar.error  { color: #e74c3c; }
+
+  /* ── SUMMARY BAR ── */
+  #summary-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+
+  .summary-chip {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 22px;
+    min-width: 180px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    flex: 1 1 180px;
+  }
+
+  .summary-chip .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin-bottom: 6px;
+  }
+
+  .summary-chip .value {
+    font-size: 1.35rem;
+    font-weight: 700;
+  }
+
+  .chip-total    { border-top: 4px solid #2e75b6; }
+  .chip-total    .value { color: #2e75b6; }
+  .chip-conta    { border-top: 4px solid #43a047; }
+  .chip-conta    .value { color: #43a047; }
+  .chip-terceiro { border-top: 4px solid #e67e22; }
+  .chip-terceiro .value { color: #e67e22; }
+  .chip-fora     { border-top: 4px solid #8e44ad; }
+  .chip-fora     .value { color: #8e44ad; }
+
+  /* ── SECTION TITLES ── */
+  .section-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #555;
+    margin: 0 0 12px;
+    border-left: 3px solid #2e75b6;
+    padding-left: 10px;
+  }
+
+  /* ── CARDS GRID ── */
+  #cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .card-panel {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-header span {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.03em;
+  }
+
+  .card-header .card-icon { font-size: 1.2rem; opacity: 0.85; }
+
+  .card-aadvantage { background: linear-gradient(135deg, #c0392b, #922b21); }
+  .card-unique     { background: linear-gradient(135deg, #1565c0, #0d47a1); }
+  .card-tavi       { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+  .card-brb        { background: linear-gradient(135deg, #4527a0, #311b92); }
+
+  .card-body { padding: 12px 14px 0; }
+
+  /* ── ENTRY TABLE ── */
+  .entry-table { width: 100%; border-collapse: collapse; }
+
+  .entry-table thead th {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #999;
+    padding: 4px 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .entry-table thead th.th-check { text-align: center; width: 54px; }
+
+  .entry-table td {
+    padding: 6px 4px;
+    border-bottom: 1px solid #f3f3f3;
+    vertical-align: middle;
+  }
+
+  .entry-table tbody tr:last-child td { border-bottom: none; }
+
+  .entry-table input[type="text"],
+  .entry-table input[type="number"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+    background: transparent;
+    padding: 4px 2px;
+    font-size: 0.87rem;
+    color: #1a1a2e;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .entry-table input:focus { border-bottom-color: #2e75b6; }
+  .entry-table input[type="number"] { width: 90px; }
+
+  .td-check { text-align: center; }
+
+  input[type="checkbox"] {
+    width: 17px; height: 17px;
+    cursor: pointer;
+    accent-color: #43a047;
+  }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+  .btn-del:hover { color: #e74c3c; }
+
+  /* ── ADD ROW BUTTON ── */
+  .btn-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #2e75b6;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px 14px;
+    font-weight: 600;
+    transition: opacity 0.15s;
+  }
+  .btn-add:hover { opacity: 0.75; }
+
+  /* ── CARD FOOTER TOTALS ── */
+  .card-footer {
+    background: #f8f9fb;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin-top: 4px;
+  }
+
+  .card-footer .foot-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .card-footer .foot-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+  }
+
+  .card-footer .foot-value { font-size: 0.95rem; font-weight: 700; }
+  .foot-total-val { color: #2e75b6; }
+  .foot-conta-val { color: #43a047; }
+
+  /* ── GENERIC SECTION ── */
+  .generic-section {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .generic-header {
+    padding: 13px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .generic-header span { font-size: 0.95rem; font-weight: 700; color: #fff; letter-spacing: 0.03em; }
+  .header-terceiro { background: linear-gradient(135deg, #e67e22, #ca6f1e); }
+  .header-fora     { background: linear-gradient(135deg, #8e44ad, #6c3483); }
+
+  .generic-body { padding: 12px 14px 0; }
+
+  .generic-table { width: 100%; border-collapse: collapse; }
+
+  .generic-table thead th {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #999;
+    padding: 4px 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  .generic-table td {
+    padding: 6px 4px;
+    border-bottom: 1px solid #f3f3f3;
+    vertical-align: middle;
+  }
+
+  .generic-table tbody tr:last-child td { border-bottom: none; }
+
+  .generic-table input[type="text"],
+  .generic-table input[type="number"] {
+    width: 100%;
+    border: none;
+    border-bottom: 1px solid #e0e0e0;
+    background: transparent;
+    padding: 4px 2px;
+    font-size: 0.87rem;
+    color: #1a1a2e;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .generic-table input:focus { border-bottom-color: #2e75b6; }
+  .generic-table input[type="number"] { max-width: 140px; }
+
+  .generic-footer {
+    background: #f8f9fb;
+    border-top: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 18px;
+    margin-top: 4px;
+  }
+
+  .generic-footer .foot-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #aaa;
+  }
+
+  .generic-footer .foot-value { font-size: 1rem; font-weight: 700; }
+  .terceiro-total { color: #e67e22; }
+  .fora-total     { color: #8e44ad; }
+
+  /* ── LOADING OVERLAY ── */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: rgba(240,242,245,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #555;
+    z-index: 999;
+    gap: 10px;
+  }
+
+  .spinner {
+    width: 22px; height: 22px;
+    border: 3px solid #ddd;
+    border-top-color: #2e75b6;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 600px) {
+    #summary-bar { flex-direction: column; }
+    .summary-chip { flex: unset; width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spinner"></div> Carregando dados…</div>
+
+<h1>Controle Financeiro</h1>
+<div id="status-bar"></div>
+
+<!-- SUMMARY BAR -->
+<div id="summary-bar">
+  <div class="summary-chip chip-total">
+    <div class="label">Total nos Cartões</div>
+    <div class="value" id="sum-total-cartoes">R$ 0,00</div>
+  </div>
+  <div class="summary-chip chip-conta">
+    <div class="label">Já em Conta</div>
+    <div class="value" id="sum-em-conta">R$ 0,00</div>
+  </div>
+  <div class="summary-chip chip-terceiro">
+    <div class="label">Em Conta (não é meu)</div>
+    <div class="value" id="sum-terceiro">R$ 0,00</div>
+  </div>
+  <div class="summary-chip chip-fora">
+    <div class="label">Meu, fora da conta</div>
+    <div class="value" id="sum-fora">R$ 0,00</div>
+  </div>
+</div>
+
+<!-- CARTÕES -->
+<p class="section-title">Apuração de Cartões</p>
+<div id="cards-grid">
+
+  <div class="card-panel" id="panel-aadvantage">
+    <div class="card-header card-aadvantage">
+      <span>AAdvantage</span><span class="card-icon">✈️</span>
+    </div>
+    <div class="card-body">
+      <table class="entry-table">
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <tbody id="tbody-aadvantage"></tbody>
+      </table>
+      <button class="btn-add" onclick="addRow('aadvantage')">＋ Adicionar linha</button>
+    </div>
+    <div class="card-footer">
+      <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-aadvantage">R$ 0,00</span></div>
+      <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-aadvantage">R$ 0,00</span></div>
+    </div>
+  </div>
+
+  <div class="card-panel" id="panel-unique">
+    <div class="card-header card-unique">
+      <span>Unique Visa</span><span class="card-icon">💳</span>
+    </div>
+    <div class="card-body">
+      <table class="entry-table">
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <tbody id="tbody-unique"></tbody>
+      </table>
+      <button class="btn-add" onclick="addRow('unique')">＋ Adicionar linha</button>
+    </div>
+    <div class="card-footer">
+      <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-unique">R$ 0,00</span></div>
+      <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-unique">R$ 0,00</span></div>
+    </div>
+  </div>
+
+  <div class="card-panel" id="panel-tavi">
+    <div class="card-header card-tavi">
+      <span>TAVI</span><span class="card-icon">🏦</span>
+    </div>
+    <div class="card-body">
+      <table class="entry-table">
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <tbody id="tbody-tavi"></tbody>
+      </table>
+      <button class="btn-add" onclick="addRow('tavi')">＋ Adicionar linha</button>
+    </div>
+    <div class="card-footer">
+      <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-tavi">R$ 0,00</span></div>
+      <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-tavi">R$ 0,00</span></div>
+    </div>
+  </div>
+
+  <div class="card-panel" id="panel-brb">
+    <div class="card-header card-brb">
+      <span>BRB</span><span class="card-icon">🏛️</span>
+    </div>
+    <div class="card-body">
+      <table class="entry-table">
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <tbody id="tbody-brb"></tbody>
+      </table>
+      <button class="btn-add" onclick="addRow('brb')">＋ Adicionar linha</button>
+    </div>
+    <div class="card-footer">
+      <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-brb">R$ 0,00</span></div>
+      <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-brb">R$ 0,00</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- EM CONTA MAS NÃO É MEU -->
+<p class="section-title" style="border-color:#e67e22;">Dinheiro em conta, mas não é meu</p>
+<div class="generic-section">
+  <div class="generic-header header-terceiro">
+    <span>Valores de terceiros na minha conta</span><span>💰</span>
+  </div>
+  <div class="generic-body">
+    <table class="generic-table">
+      <thead><tr><th>Valor (R$)</th><th>Descrição</th><th></th></tr></thead>
+      <tbody id="tbody-terceiro"></tbody>
+    </table>
+    <button class="btn-add" style="color:#e67e22" onclick="addGenericRow('terceiro')">＋ Adicionar linha</button>
+  </div>
+  <div class="generic-footer">
+    <span class="foot-label">Total</span>
+    <span class="foot-value terceiro-total" id="total-terceiro">R$ 0,00</span>
+  </div>
+</div>
+
+<!-- MEU, FORA DA CONTA -->
+<p class="section-title" style="border-color:#8e44ad;">Dinheiro meu, fora da conta</p>
+<div class="generic-section">
+  <div class="generic-header header-fora">
+    <span>Valores meus fora da conta corrente</span><span>🪙</span>
+  </div>
+  <div class="generic-body">
+    <table class="generic-table">
+      <thead><tr><th>Valor (R$)</th><th>Descrição</th><th></th></tr></thead>
+      <tbody id="tbody-fora"></tbody>
+    </table>
+    <button class="btn-add" style="color:#8e44ad" onclick="addGenericRow('fora')">＋ Adicionar linha</button>
+  </div>
+  <div class="generic-footer">
+    <span class="foot-label">Total</span>
+    <span class="foot-value fora-total" id="total-fora">R$ 0,00</span>
+  </div>
+</div>
+
+<script>
+// ── Supabase ──────────────────────────────────────────────────
+const SUPABASE_URL = 'https://xhmtwuanpafhczffoyrj.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhobXR3dWFucGFmaGN6ZmZveXJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NzcwMDYsImV4cCI6MjA5MTE1MzAwNn0.JiCBirwOOuE2jZSkWy7SOQrPvBeOGoxkxBSPwQzVj0Y'
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+const cards   = ['aadvantage','unique','tavi','brb']
+const allTipos = [...cards, 'terceiro','fora']
+
+// ── Helpers ──────────────────────────────────────────────────
+function fmt(n) {
+  return 'R$ ' + n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+let saveTimer = null
+function setStatus(msg, cls) {
+  const el = document.getElementById('status-bar')
+  el.textContent = msg
+  el.className = cls
+}
+
+// ── Recalc totals ─────────────────────────────────────────────
+function recalcCard(tipo) {
+  const tbody = document.getElementById('tbody-' + tipo)
+  let total = 0, conta = 0
+  tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+    const val = parseFloat(tr.querySelector('.inp-valor').value) || 0
+    const chk = tr.querySelector('.inp-conta').checked
+    total += val
+    if (chk) conta += val
+  })
+  document.getElementById('total-' + tipo).textContent = fmt(total)
+  document.getElementById('conta-' + tipo).textContent = fmt(conta)
+  recalcSummary()
+}
+
+function recalcGeneric(tipo) {
+  const tbody = document.getElementById('tbody-' + tipo)
+  let total = 0
+  tbody.querySelectorAll('.inp-valor').forEach(inp => { total += parseFloat(inp.value) || 0 })
+  document.getElementById('total-' + tipo).textContent = fmt(total)
+  recalcSummary()
+}
+
+function recalcSummary() {
+  let totalCartoes = 0, totalConta = 0
+  cards.forEach(c => {
+    document.getElementById('tbody-' + c).querySelectorAll('tr[data-id]').forEach(tr => {
+      const val = parseFloat(tr.querySelector('.inp-valor').value) || 0
+      totalCartoes += val
+      if (tr.querySelector('.inp-conta').checked) totalConta += val
+    })
+  })
+  let totalTerceiro = 0
+  document.getElementById('tbody-terceiro').querySelectorAll('.inp-valor').forEach(i => { totalTerceiro += parseFloat(i.value) || 0 })
+  let totalFora = 0
+  document.getElementById('tbody-fora').querySelectorAll('.inp-valor').forEach(i => { totalFora += parseFloat(i.value) || 0 })
+
+  document.getElementById('sum-total-cartoes').textContent = fmt(totalCartoes)
+  document.getElementById('sum-em-conta').textContent      = fmt(totalConta)
+  document.getElementById('sum-terceiro').textContent      = fmt(totalTerceiro)
+  document.getElementById('sum-fora').textContent          = fmt(totalFora)
+}
+
+// ── Render rows from DB data ──────────────────────────────────
+function renderCardRow(tipo, row) {
+  const tbody = document.getElementById('tbody-' + tipo)
+  const tr = document.createElement('tr')
+  tr.dataset.id = row.id
+
+  tr.innerHTML = `
+    <td><input class="inp-pagador" type="text"   value="${escHtml(row.pagador||'')}"   placeholder="Nome" /></td>
+    <td><input class="inp-valor"   type="number"  value="${row.valor||''}"             placeholder="0,00" step="0.01" min="0" /></td>
+    <td><input class="inp-desc"    type="text"    value="${escHtml(row.descricao||'')}" placeholder="(opcional)" /></td>
+    <td class="td-check"><input class="inp-conta" type="checkbox" ${row.em_conta ? 'checked' : ''} /></td>
+    <td><button class="btn-del" data-id="${row.id}" data-tipo="${tipo}">✕</button></td>
+  `
+
+  // Autosave on change
+  tr.querySelector('.inp-pagador').addEventListener('blur',   () => saveRow(tr, tipo))
+  tr.querySelector('.inp-valor')  .addEventListener('blur',   () => { recalcCard(tipo); saveRow(tr, tipo) })
+  tr.querySelector('.inp-desc')   .addEventListener('blur',   () => saveRow(tr, tipo))
+  tr.querySelector('.inp-conta')  .addEventListener('change', () => { recalcCard(tipo); saveRow(tr, tipo) })
+  tr.querySelector('.btn-del')    .addEventListener('click',  () => deleteRow(tr, tipo))
+
+  tbody.appendChild(tr)
+  recalcCard(tipo)
+}
+
+function renderGenericRow(tipo, row) {
+  const tbody = document.getElementById('tbody-' + tipo)
+  const tr = document.createElement('tr')
+  tr.dataset.id = row.id
+
+  tr.innerHTML = `
+    <td><input class="inp-valor" type="number" value="${row.valor||''}" placeholder="0,00" step="0.01" min="0" /></td>
+    <td><input class="inp-desc"  type="text"   value="${escHtml(row.descricao||'')}" placeholder="Descrição" /></td>
+    <td><button class="btn-del" data-id="${row.id}" data-tipo="${tipo}">✕</button></td>
+  `
+
+  tr.querySelector('.inp-valor').addEventListener('blur',  () => { recalcGeneric(tipo); saveRow(tr, tipo) })
+  tr.querySelector('.inp-desc') .addEventListener('blur',  () => saveRow(tr, tipo))
+  tr.querySelector('.btn-del')  .addEventListener('click', () => deleteRow(tr, tipo))
+
+  tbody.appendChild(tr)
+  recalcGeneric(tipo)
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') }
+
+// ── Add row (insere no DB, depois renderiza) ──────────────────
+async function addRow(tipo) {
+  const { data, error } = await db
+    .from('lancamentos')
+    .insert({ tipo, pagador:'', valor:0, descricao:'', em_conta:false })
+    .select()
+    .single()
+
+  if (error) { setStatus('Erro ao adicionar linha', 'error'); return }
+  renderCardRow(tipo, data)
+  // Focus no primeiro input
+  const tr = document.querySelector(`[data-id="${data.id}"]`)
+  tr?.querySelector('.inp-pagador')?.focus()
+}
+
+async function addGenericRow(tipo) {
+  const { data, error } = await db
+    .from('lancamentos')
+    .insert({ tipo, valor:0, descricao:'', em_conta:false })
+    .select()
+    .single()
+
+  if (error) { setStatus('Erro ao adicionar linha', 'error'); return }
+  renderGenericRow(tipo, data)
+  const tr = document.querySelector(`[data-id="${data.id}"]`)
+  tr?.querySelector('.inp-valor')?.focus()
+}
+
+// ── Save row to DB ────────────────────────────────────────────
+async function saveRow(tr, tipo) {
+  const id = tr.dataset.id
+  setStatus('Salvando…', 'saving')
+
+  let updates = {}
+  if (cards.includes(tipo)) {
+    updates = {
+      pagador:  tr.querySelector('.inp-pagador').value,
+      valor:    parseFloat(tr.querySelector('.inp-valor').value) || 0,
+      descricao:tr.querySelector('.inp-desc').value,
+      em_conta: tr.querySelector('.inp-conta').checked,
+    }
+  } else {
+    updates = {
+      valor:    parseFloat(tr.querySelector('.inp-valor').value) || 0,
+      descricao:tr.querySelector('.inp-desc').value,
+    }
+  }
+
+  const { error } = await db.from('lancamentos').update(updates).eq('id', id)
+  if (error) {
+    setStatus('Erro ao salvar', 'error')
+  } else {
+    setStatus('Salvo ✓', 'saved')
+    setTimeout(() => setStatus('', ''), 2000)
+  }
+}
+
+// ── Delete row ────────────────────────────────────────────────
+async function deleteRow(tr, tipo) {
+  const id = tr.dataset.id
+  const { error } = await db.from('lancamentos').delete().eq('id', id)
+  if (error) { setStatus('Erro ao remover', 'error'); return }
+  tr.remove()
+  if (cards.includes(tipo)) recalcCard(tipo)
+  else recalcGeneric(tipo)
+}
+
+// ── Load all rows on startup ──────────────────────────────────
+async function loadAll() {
+  const { data, error } = await db
+    .from('lancamentos')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  document.getElementById('loading').style.display = 'none'
+
+  if (error) { setStatus('Erro ao carregar dados', 'error'); return }
+
+  data.forEach(row => {
+    if (cards.includes(row.tipo)) renderCardRow(row.tipo, row)
+    else if (row.tipo === 'terceiro' || row.tipo === 'fora') renderGenericRow(row.tipo, row)
+  })
+
+  recalcSummary()
+}
+
+loadAll()
+</script>
+</body>
+</html>
