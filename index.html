@@ -192,6 +192,23 @@
   .btn-dup:hover { color: #2e75b6; }
   .td-actions { white-space: nowrap; }
 
+  /* ── GROUP HEADER ── */
+  .group-header { cursor: pointer; background: #eef3fb; transition: background 0.15s; }
+  .group-header:hover { background: #dde8f5; }
+  .group-header td {
+    padding: 7px 8px !important;
+    border-bottom: 1px solid #d5e3f0 !important;
+  }
+  .group-header-cell {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+  }
+  .group-toggle { color: #2e75b6; font-size: 0.7rem; width: 14px; flex-shrink: 0; }
+  .group-name   { font-weight: 700; font-size: 0.87rem; color: #1a1a2e; flex: 1; }
+  .group-count  { font-size: 0.7rem; color: #aaa; white-space: nowrap; }
+  .group-total  { font-weight: 700; color: #2e75b6; font-size: 0.9rem; white-space: nowrap; margin-left: 4px; }
+
   /* ── ADD ROW BUTTON ── */
   .btn-add {
     display: flex;
@@ -519,6 +536,65 @@ function recalcCard(tipo) {
   document.getElementById('total-' + tipo).textContent = fmt(total)
   document.getElementById('conta-' + tipo).textContent = fmt(conta)
   recalcSummary()
+  regroupCard(tipo)
+}
+
+// ── Agrupamento por pagador ───────────────────────────────────
+function regroupCard(tipo) {
+  const tbody = document.getElementById('tbody-' + tipo)
+
+  // Preserva quais grupos estavam expandidos
+  const expanded = new Set()
+  tbody.querySelectorAll('.group-header[data-expanded="true"]').forEach(el => {
+    expanded.add(el.dataset.pagador)
+  })
+
+  // Remove cabeçalhos de grupo antigos e exibe todas as linhas
+  tbody.querySelectorAll('.group-header').forEach(el => el.remove())
+  tbody.querySelectorAll('tr[data-id]').forEach(tr => tr.style.display = '')
+
+  // Agrupa linhas por pagador (mantendo a ordem de aparição)
+  const groups = new Map()
+  tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+    const pagador = tr.querySelector('.inp-pagador').value.trim() || '(sem nome)'
+    if (!groups.has(pagador)) groups.set(pagador, [])
+    groups.get(pagador).push(tr)
+  })
+
+  // Cria cabeçalhos apenas para grupos com mais de 1 linha
+  groups.forEach((rows, pagador) => {
+    if (rows.length <= 1) return
+
+    const total = rows.reduce((s, tr) => s + (parseFloat(tr.querySelector('.inp-valor').value) || 0), 0)
+    const isExpanded = expanded.has(pagador)
+
+    const headerTr = document.createElement('tr')
+    headerTr.classList.add('group-header')
+    headerTr.dataset.pagador = pagador
+    headerTr.dataset.expanded = isExpanded ? 'true' : 'false'
+    headerTr.innerHTML = `
+      <td colspan="5" class="group-header-cell">
+        <span class="group-toggle">${isExpanded ? '▼' : '▶'}</span>
+        <span class="group-name">${escHtml(pagador)}</span>
+        <span class="group-count">${rows.length} lançamentos</span>
+        <span class="group-total">${fmt(total)}</span>
+      </td>
+    `
+
+    // Insere o cabeçalho antes da primeira linha do grupo
+    rows[0].before(headerTr)
+
+    // Oculta as linhas individuais se colapsado
+    rows.forEach(tr => tr.style.display = isExpanded ? '' : 'none')
+
+    // Toggle ao clicar
+    headerTr.addEventListener('click', () => {
+      const nowExpanded = headerTr.dataset.expanded === 'true'
+      headerTr.dataset.expanded = !nowExpanded ? 'true' : 'false'
+      headerTr.querySelector('.group-toggle').textContent = !nowExpanded ? '▼' : '▶'
+      rows.forEach(tr => tr.style.display = !nowExpanded ? '' : 'none')
+    })
+  })
 }
 
 function recalcGeneric(tipo) {
@@ -643,8 +719,10 @@ async function addRow(tipo) {
 
   if (error) { setStatus('Erro ao adicionar linha', 'error'); return }
   renderCardRow(tipo, data)
-  // Focus no primeiro input
+  regroupCard(tipo)
   const tr = document.querySelector(`[data-id="${data.id}"]`)
+  // Expande linha recém-adicionada se estiver dentro de um grupo colapsado
+  if (tr) tr.style.display = ''
   tr?.querySelector('.inp-pagador')?.focus()
 }
 
@@ -702,16 +780,11 @@ async function duplicateCardRow(tr, tipo) {
   const { data, error } = await db.from('lancamentos').insert(payload).select().single()
   if (error) { setStatus('Erro ao duplicar', 'error'); return }
 
-  // Renderiza logo após a linha original
-  const newTr = document.createElement('tr')
-  newTr.dataset.id = data.id
   const tbody = document.getElementById('tbody-' + tipo)
-  tr.after(newTr)
-  tbody.removeChild(newTr) // remove temp, renderiza com a função padrão
   renderCardRow(tipo, data)
-  // Move a nova linha para logo após a original
   const rendered = tbody.querySelector(`[data-id="${data.id}"]`)
   tr.after(rendered)
+  regroupCard(tipo)
 
   setStatus('Duplicado ✓', 'saved')
   setTimeout(() => setStatus('', ''), 2000)
@@ -741,7 +814,7 @@ async function deleteRow(tr, tipo) {
   const { error } = await db.from('lancamentos').delete().eq('id', id)
   if (error) { setStatus('Erro ao remover', 'error'); return }
   tr.remove()
-  if (cards.includes(tipo)) recalcCard(tipo)
+  if (cards.includes(tipo)) { recalcCard(tipo) }
   else recalcGeneric(tipo)
 }
 
@@ -761,6 +834,7 @@ async function loadAll() {
     else if (row.tipo === 'terceiro' || row.tipo === 'fora') renderGenericRow(row.tipo, row)
   })
 
+  cards.forEach(c => regroupCard(c))
   recalcSummary()
 }
 
