@@ -176,18 +176,21 @@
     accent-color: #43a047;
   }
 
-  .btn-del {
+  .btn-del, .btn-dup {
     background: none;
     border: none;
-    color: #ccc;
-    font-size: 1rem;
+    font-size: 0.95rem;
     cursor: pointer;
     padding: 2px 4px;
     border-radius: 4px;
     transition: color 0.15s;
     line-height: 1;
   }
+  .btn-del { color: #ccc; }
   .btn-del:hover { color: #e74c3c; }
+  .btn-dup { color: #ccc; }
+  .btn-dup:hover { color: #2e75b6; }
+  .td-actions { white-space: nowrap; }
 
   /* ── ADD ROW BUTTON ── */
   .btn-add {
@@ -557,7 +560,10 @@ function renderCardRow(tipo, row) {
     <td><input class="inp-valor"   type="number"  value="${row.valor||''}"             placeholder="0,00" step="0.01" min="0" /></td>
     <td><input class="inp-desc"    type="text"    value="${escHtml(row.descricao||'')}" placeholder="(opcional)" /></td>
     <td class="td-check"><input class="inp-conta" type="checkbox" ${row.em_conta ? 'checked' : ''} /></td>
-    <td><button class="btn-del" data-id="${row.id}" data-tipo="${tipo}">✕</button></td>
+    <td class="td-actions">
+      <button class="btn-dup" title="Duplicar">⧉</button>
+      <button class="btn-del" title="Excluir">✕</button>
+    </td>
   `
 
   // Autosave on change
@@ -565,6 +571,7 @@ function renderCardRow(tipo, row) {
   tr.querySelector('.inp-valor')  .addEventListener('blur',   () => { recalcCard(tipo); saveRow(tr, tipo) })
   tr.querySelector('.inp-desc')   .addEventListener('blur',   () => saveRow(tr, tipo))
   tr.querySelector('.inp-conta')  .addEventListener('change', () => { recalcCard(tipo); saveRow(tr, tipo) })
+  tr.querySelector('.btn-dup')    .addEventListener('click',  () => duplicateCardRow(tr, tipo))
   tr.querySelector('.btn-del')    .addEventListener('click',  () => deleteRow(tr, tipo))
 
   tbody.appendChild(tr)
@@ -579,11 +586,15 @@ function renderGenericRow(tipo, row) {
   tr.innerHTML = `
     <td><input class="inp-valor" type="number" value="${row.valor||''}" placeholder="0,00" step="0.01" min="0" /></td>
     <td><input class="inp-desc"  type="text"   value="${escHtml(row.descricao||'')}" placeholder="Descrição" /></td>
-    <td><button class="btn-del" data-id="${row.id}" data-tipo="${tipo}">✕</button></td>
+    <td class="td-actions">
+      <button class="btn-dup" title="Duplicar">⧉</button>
+      <button class="btn-del" title="Excluir">✕</button>
+    </td>
   `
 
   tr.querySelector('.inp-valor').addEventListener('blur',  () => { recalcGeneric(tipo); saveRow(tr, tipo) })
   tr.querySelector('.inp-desc') .addEventListener('blur',  () => saveRow(tr, tipo))
+  tr.querySelector('.btn-dup')  .addEventListener('click', () => duplicateGenericRow(tr, tipo))
   tr.querySelector('.btn-del')  .addEventListener('click', () => deleteRow(tr, tipo))
 
   tbody.appendChild(tr)
@@ -647,6 +658,51 @@ async function saveRow(tr, tipo) {
     setStatus('Salvo ✓', 'saved')
     setTimeout(() => setStatus('', ''), 2000)
   }
+}
+
+// ── Duplicate row ────────────────────────────────────────────
+async function duplicateCardRow(tr, tipo) {
+  const payload = {
+    tipo,
+    pagador:   tr.querySelector('.inp-pagador').value,
+    valor:     parseFloat(tr.querySelector('.inp-valor').value) || 0,
+    descricao: tr.querySelector('.inp-desc').value,
+    em_conta:  tr.querySelector('.inp-conta').checked,
+  }
+  const { data, error } = await db.from('lancamentos').insert(payload).select().single()
+  if (error) { setStatus('Erro ao duplicar', 'error'); return }
+
+  // Renderiza logo após a linha original
+  const newTr = document.createElement('tr')
+  newTr.dataset.id = data.id
+  const tbody = document.getElementById('tbody-' + tipo)
+  tr.after(newTr)
+  tbody.removeChild(newTr) // remove temp, renderiza com a função padrão
+  renderCardRow(tipo, data)
+  // Move a nova linha para logo após a original
+  const rendered = tbody.querySelector(`[data-id="${data.id}"]`)
+  tr.after(rendered)
+
+  setStatus('Duplicado ✓', 'saved')
+  setTimeout(() => setStatus('', ''), 2000)
+}
+
+async function duplicateGenericRow(tr, tipo) {
+  const payload = {
+    tipo,
+    valor:     parseFloat(tr.querySelector('.inp-valor').value) || 0,
+    descricao: tr.querySelector('.inp-desc').value,
+  }
+  const { data, error } = await db.from('lancamentos').insert(payload).select().single()
+  if (error) { setStatus('Erro ao duplicar', 'error'); return }
+
+  const tbody = document.getElementById('tbody-' + tipo)
+  renderGenericRow(tipo, data)
+  const rendered = tbody.querySelector(`[data-id="${data.id}"]`)
+  tr.after(rendered)
+
+  setStatus('Duplicado ✓', 'saved')
+  setTimeout(() => setStatus('', ''), 2000)
 }
 
 // ── Delete row ────────────────────────────────────────────────
