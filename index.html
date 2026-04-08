@@ -94,7 +94,7 @@
   /* ── CARDS GRID ── */
   #cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
     gap: 16px;
     margin-bottom: 28px;
   }
@@ -130,7 +130,7 @@
   .card-body { padding: 12px 14px 0; }
 
   /* ── ENTRY TABLE ── */
-  .entry-table { width: 100%; border-collapse: collapse; }
+  .entry-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
   .entry-table thead th {
     font-size: 0.68rem;
@@ -142,12 +142,20 @@
     border-bottom: 1px solid #eee;
   }
 
-  .entry-table thead th.th-check { text-align: center; width: 54px; }
+  /* Larguras fixas por coluna: Pagador | Valor | Descrição | Checkbox | Ações */
+  .entry-table col.col-pagador { width: 26%; }
+  .entry-table col.col-valor   { width: 22%; }
+  .entry-table col.col-desc    { width: 30%; }
+  .entry-table col.col-check   { width: 12%; }
+  .entry-table col.col-actions { width: 10%; }
+
+  .entry-table thead th.th-check { text-align: center; }
 
   .entry-table td {
     padding: 6px 4px;
     border-bottom: 1px solid #f3f3f3;
     vertical-align: middle;
+    overflow: hidden;
   }
 
   .entry-table tbody tr:last-child td { border-bottom: none; }
@@ -400,6 +408,7 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
         <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
         <tbody id="tbody-aadvantage"></tbody>
       </table>
@@ -417,6 +426,7 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
         <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
         <tbody id="tbody-unique"></tbody>
       </table>
@@ -434,6 +444,7 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
         <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
         <tbody id="tbody-tavi"></tbody>
       </table>
@@ -451,6 +462,7 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
         <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
         <tbody id="tbody-brb"></tbody>
       </table>
