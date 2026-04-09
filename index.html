@@ -142,12 +142,13 @@
     border-bottom: 1px solid #eee;
   }
 
-  /* Larguras fixas por coluna: Pagador | Valor | Descrição | Checkbox | Ações */
-  .entry-table col.col-pagador { width: 26%; }
-  .entry-table col.col-valor   { width: 22%; }
-  .entry-table col.col-desc    { width: 30%; }
-  .entry-table col.col-check   { width: 12%; }
-  .entry-table col.col-actions { width: 10%; }
+  /* Larguras fixas por coluna: Pagador | Valor | Descrição | Em conta | MPM | Ações */
+  .entry-table col.col-pagador { width: 24%; }
+  .entry-table col.col-valor   { width: 18%; }
+  .entry-table col.col-desc    { width: 28%; }
+  .entry-table col.col-check   { width: 11%; }
+  .entry-table col.col-mpm     { width: 10%; }
+  .entry-table col.col-actions { width: 9%; }
 
   .entry-table thead th.th-check { text-align: center; }
 
@@ -200,6 +201,28 @@
   .btn-dup:hover { color: #2e75b6; }
   .td-actions { white-space: nowrap; }
 
+  /* ── MPM ── */
+  .btn-mpm {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px 5px;
+    cursor: pointer;
+    background: none;
+    color: #bbb;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-mpm:hover { border-color: #f39c12; color: #f39c12; }
+  .btn-mpm.ativo {
+    background: #fef3cd;
+    border-color: #f39c12;
+    color: #d68910;
+  }
+  tr.mpm-ativo { background: #fffbf0 !important; }
+
 
   /* ── ADD ROW BUTTON ── */
   .btn-add {
@@ -217,12 +240,28 @@
   }
   .btn-add:hover { opacity: 0.75; }
 
+  /* ── QUITAR CARTÃO ── */
+  .btn-quitar {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #c0392b;
+    background: none;
+    border: 1px solid #e8b4b0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+  }
+  .btn-quitar:hover { background: #fdf0ef; }
+
   /* ── CARD FOOTER TOTALS ── */
   .card-footer {
     background: #f8f9fb;
     border-top: 1px solid #eee;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 10px 16px;
     margin-top: 4px;
   }
@@ -392,8 +431,8 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
-        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
-        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-mpm"><col class="col-actions"></colgroup>
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th class="th-check">MPM</th><th></th></tr></thead>
         <tbody id="tbody-aadvantage"></tbody>
       </table>
       <button class="btn-add" onclick="addRow('aadvantage')">＋ Adicionar linha</button>
@@ -401,6 +440,8 @@
     <div class="card-footer">
       <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-aadvantage">R$ 0,00</span></div>
       <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-aadvantage">R$ 0,00</span></div>
+      <button class="btn-quitar" onclick="quitarCartao('aadvantage')">Quitar cartão</button>
+      <button class="btn-quitar" style="border-color:#b0c4de;color:#555" onclick="limparCartao('aadvantage')">Limpar cartão</button>
     </div>
   </div>
 
@@ -410,8 +451,8 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
-        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
-        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-mpm"><col class="col-actions"></colgroup>
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th class="th-check">MPM</th><th></th></tr></thead>
         <tbody id="tbody-unique"></tbody>
       </table>
       <button class="btn-add" onclick="addRow('unique')">＋ Adicionar linha</button>
@@ -419,6 +460,8 @@
     <div class="card-footer">
       <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-unique">R$ 0,00</span></div>
       <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-unique">R$ 0,00</span></div>
+      <button class="btn-quitar" onclick="quitarCartao('unique')">Quitar cartão</button>
+      <button class="btn-quitar" style="border-color:#b0c4de;color:#555" onclick="limparCartao('unique')">Limpar cartão</button>
     </div>
   </div>
 
@@ -428,8 +471,8 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
-        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
-        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-mpm"><col class="col-actions"></colgroup>
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th class="th-check">MPM</th><th></th></tr></thead>
         <tbody id="tbody-tavi"></tbody>
       </table>
       <button class="btn-add" onclick="addRow('tavi')">＋ Adicionar linha</button>
@@ -437,6 +480,8 @@
     <div class="card-footer">
       <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-tavi">R$ 0,00</span></div>
       <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-tavi">R$ 0,00</span></div>
+      <button class="btn-quitar" onclick="quitarCartao('tavi')">Quitar cartão</button>
+      <button class="btn-quitar" style="border-color:#b0c4de;color:#555" onclick="limparCartao('tavi')">Limpar cartão</button>
     </div>
   </div>
 
@@ -446,8 +491,8 @@
     </div>
     <div class="card-body">
       <table class="entry-table">
-        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-actions"></colgroup>
-        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th></th></tr></thead>
+        <colgroup><col class="col-pagador"><col class="col-valor"><col class="col-desc"><col class="col-check"><col class="col-mpm"><col class="col-actions"></colgroup>
+        <thead><tr><th>Pagador</th><th>Valor (R$)</th><th>Descrição</th><th class="th-check">Em conta</th><th class="th-check">MPM</th><th></th></tr></thead>
         <tbody id="tbody-brb"></tbody>
       </table>
       <button class="btn-add" onclick="addRow('brb')">＋ Adicionar linha</button>
@@ -455,6 +500,8 @@
     <div class="card-footer">
       <div class="foot-item"><span class="foot-label">Total gasto</span><span class="foot-value foot-total-val" id="total-brb">R$ 0,00</span></div>
       <div class="foot-item"><span class="foot-label">Em conta</span><span class="foot-value foot-conta-val" id="conta-brb">R$ 0,00</span></div>
+      <button class="btn-quitar" onclick="quitarCartao('brb')">Quitar cartão</button>
+      <button class="btn-quitar" style="border-color:#b0c4de;color:#555" onclick="limparCartao('brb')">Limpar cartão</button>
     </div>
   </div>
 
@@ -586,17 +633,21 @@ function renderCardRow(tipo, row) {
     <td><input class="inp-valor"   type="text" inputmode="decimal" value="${row.valor > 0 ? row.valor : ''}" placeholder="0,00" /></td>
     <td><input class="inp-desc"    type="text"    value="${escHtml(row.descricao||'')}" placeholder="(opcional)" /></td>
     <td class="td-check"><input class="inp-conta" type="checkbox" ${row.em_conta ? 'checked' : ''} /></td>
+    <td class="td-check"><button class="btn-mpm ${row.mpm ? 'ativo' : ''}" title="Manter para o próximo mês">MPM</button></td>
     <td class="td-actions">
       <button class="btn-dup" title="Duplicar">⧉</button>
       <button class="btn-del" title="Excluir">✕</button>
     </td>
   `
 
+  if (row.mpm) tr.classList.add('mpm-ativo')
+
   // Autosave on change
   tr.querySelector('.inp-pagador').addEventListener('blur',   () => { saveRow(tr, tipo); sortByPagador(tipo) })
   bindMathInput(tr.querySelector('.inp-valor'), () => { recalcCard(tipo); saveRow(tr, tipo) })
   tr.querySelector('.inp-desc')   .addEventListener('blur',   () => saveRow(tr, tipo))
   tr.querySelector('.inp-conta')  .addEventListener('change', () => { recalcCard(tipo); saveRow(tr, tipo) })
+  tr.querySelector('.btn-mpm')    .addEventListener('click',  () => toggleMpm(tr, tipo))
   tr.querySelector('.btn-dup')    .addEventListener('click',  () => duplicateCardRow(tr, tipo))
   tr.querySelector('.btn-del')    .addEventListener('click',  () => deleteRow(tr, tipo))
 
@@ -663,7 +714,7 @@ function bindMathInput(input, onAfter) {
 async function addRow(tipo) {
   const { data, error } = await db
     .from('lancamentos')
-    .insert({ tipo, pagador:'', valor:0, descricao:'', em_conta:false })
+    .insert({ tipo, pagador:'', valor:0, descricao:'', em_conta:false, mpm:false })
     .select()
     .single()
 
@@ -698,6 +749,7 @@ async function saveRow(tr, tipo) {
       valor:    parseFloat(tr.querySelector('.inp-valor').value) || 0,
       descricao:tr.querySelector('.inp-desc').value,
       em_conta: tr.querySelector('.inp-conta').checked,
+      mpm:      tr.querySelector('.btn-mpm').classList.contains('ativo'),
     }
   } else {
     updates = {
@@ -715,6 +767,70 @@ async function saveRow(tr, tipo) {
   }
 }
 
+// ── Toggle MPM ───────────────────────────────────────────────
+async function toggleMpm(tr, tipo) {
+  const btn = tr.querySelector('.btn-mpm')
+  const novoEstado = !btn.classList.contains('ativo')
+  btn.classList.toggle('ativo', novoEstado)
+  tr.classList.toggle('mpm-ativo', novoEstado)
+  const { error } = await db.from('lancamentos').update({ mpm: novoEstado }).eq('id', tr.dataset.id)
+  if (error) {
+    btn.classList.toggle('ativo', !novoEstado)
+    tr.classList.toggle('mpm-ativo', !novoEstado)
+    setStatus('Erro ao salvar MPM', 'error')
+  }
+}
+
+// ── Limpar cartão ─────────────────────────────────────────────
+async function limparCartao(tipo) {
+  if (!confirm('Tem certeza? Todos os lançamentos deste cartão serão apagados, exceto os marcados como MPM.')) return
+
+  const tbody = document.getElementById('tbody-' + tipo)
+  const rows = [...tbody.querySelectorAll('tr[data-id]')]
+  const paraApagar = rows.filter(tr => !tr.querySelector('.btn-mpm').classList.contains('ativo'))
+  const ids = paraApagar.map(tr => tr.dataset.id)
+
+  if (ids.length === 0) { setStatus('Nenhum lançamento para apagar', 'saved'); setTimeout(() => setStatus('', ''), 2500); return }
+
+  setStatus('Limpando…', 'saving')
+  const { error } = await db.from('lancamentos').delete().in('id', ids)
+  if (error) { setStatus('Erro ao limpar cartão', 'error'); return }
+
+  paraApagar.forEach(tr => tr.remove())
+  recalcCard(tipo)
+  setStatus('Cartão limpo ✓', 'saved')
+  setTimeout(() => setStatus('', ''), 2500)
+}
+
+// ── Quitar cartão ─────────────────────────────────────────────
+async function quitarCartao(tipo) {
+  if (!confirm('Tem certeza? Todas as marcações "Em conta" do cartão serão desmarcadas.')) return
+
+  const tbody = document.getElementById('tbody-' + tipo)
+  const rows = [...tbody.querySelectorAll('tr[data-id]')]
+
+  // Coleta IDs das linhas que estão marcadas
+  const ids = rows
+    .filter(tr => tr.querySelector('.inp-conta').checked)
+    .map(tr => tr.dataset.id)
+
+  if (ids.length === 0) { setStatus('Nenhuma marcação para limpar', 'saved'); setTimeout(() => setStatus('', ''), 2000); return }
+
+  setStatus('Salvando…', 'saving')
+  const { error } = await db
+    .from('lancamentos')
+    .update({ em_conta: false })
+    .in('id', ids)
+
+  if (error) { setStatus('Erro ao quitar cartão', 'error'); return }
+
+  // Atualiza a interface
+  rows.forEach(tr => { tr.querySelector('.inp-conta').checked = false })
+  recalcCard(tipo)
+  setStatus('Cartão quitado ✓', 'saved')
+  setTimeout(() => setStatus('', ''), 2500)
+}
+
 // ── Duplicate row ────────────────────────────────────────────
 async function duplicateCardRow(tr, tipo) {
   const payload = {
@@ -723,6 +839,7 @@ async function duplicateCardRow(tr, tipo) {
     valor:     parseFloat(tr.querySelector('.inp-valor').value) || 0,
     descricao: tr.querySelector('.inp-desc').value,
     em_conta:  tr.querySelector('.inp-conta').checked,
+    mpm:       tr.querySelector('.btn-mpm').classList.contains('ativo'),
   }
   const { data, error } = await db.from('lancamentos').insert(payload).select().single()
   if (error) { setStatus('Erro ao duplicar', 'error'); return }
